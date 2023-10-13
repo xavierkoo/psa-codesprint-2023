@@ -1,0 +1,90 @@
+version: "3.8"
+
+services:
+    client_frontend:
+        container_name: bts_frontend_vue
+        build:
+            context: ./client
+            dockerfile: client.Dockerfile
+        ports:
+            - "8080:8080"
+        depends_on:
+            bts_db:
+                condition: service_healthy
+        networks:
+            - bts_network
+
+    server_backend:
+        container_name: bts_backend_fastAPI
+        build:
+            context: ./server
+            dockerfile: server.Dockerfile
+        command: sh -c "uvicorn main:app --reload --port=5101 --host=0.0.0.0"
+        volumes:
+            - ./server:/app
+        ports:
+            - "5101:5101"
+        depends_on:
+            bts_db:
+                condition: service_healthy
+        networks:
+            - bts_network
+        environment:
+            OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+    bts_db:
+        container_name: bts_db_mysql
+        image: mysql:8.0
+        restart: always
+        ports:
+            - "5100:3306"
+        networks:
+            - bts_network
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+        volumes:
+            - ./data:/docker-entrypoint-initdb.d
+            - mysql-data:/var/lib/mysql
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "mysqladmin",
+                    "ping",
+                    "-h",
+                    "localhost",
+                    "-uroot",
+                    "-ppass",
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 20
+
+    # The `phpmyadmin` section in the Docker Compose file is defining a service for a phpMyAdmin container.
+    phpmyadmin:
+        container_name: phpmyadmin
+        image: phpmyadmin
+        restart: always
+        ports:
+            - "8081:80"
+        networks:
+            - bts_network
+        environment:
+            PMA_ARBITRARY: 1
+            PMA_HOST: ${PHPADMIN_HOST}
+            PMA_USER: root
+            PMA_PASSWORD: root
+        depends_on:
+            bts_db:
+                condition: service_healthy
+
+# The `volumes` section in the Docker Compose file is defining a named volume called `mysql_data`.
+volumes:
+    mysql-data:
+
+networks:
+    bts_network:
+        driver: bridge

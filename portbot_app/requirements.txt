@@ -1,0 +1,15 @@
+langchain==0.0.305
+streamlit==1.27.1
+openai==0.28.1
+chromadb <= 0.3.29
+tiktoken==0.5.1
+pypdf==3.16.2
+unstructured[all-docs]
+pdfminer==20191125
+poppler-utils
+pytube==15.0.0
+ffmpeg-python
+transformers
+numpy==1.26
+pandas==2.1
+pyarrow==13.0.0
